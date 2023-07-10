@@ -34,7 +34,7 @@ typedef struct {
 
 //this function should allocate the reference_count_ptr struct
 //and then this function should return just the ptr of the data
-inline void* allocate_ptr(size_t size, void (*func_ptr)(void*), pointer_type ptr_type_){
+static inline void* allocate_ptr(size_t size, void (*func_ptr)(void*), pointer_type ptr_type_){
     //check function ptr
     if(!func_ptr){
         //no destructor provided
@@ -61,7 +61,7 @@ inline void* allocate_ptr(size_t size, void (*func_ptr)(void*), pointer_type ptr
     return ref_ptr->ptr;
 }
 //could be a foot gun
-inline void release_ptr(void** ptr_){
+static inline void release_ptr(void** ptr_){
     //checks for null pointers
     if(!ptr_ || !(*ptr_)){
         #ifdef PTR_LOG
@@ -87,7 +87,7 @@ inline void release_ptr(void** ptr_){
     }
 }
 // create copy and increase reference only if shared
-inline void* get_ptr(void* ptr_){
+static inline void* get_ptr(void* ptr_){
     reference_count_ptr* container = (reference_count_ptr*) offset(ptr_);
     if(container->ptr_type == unique){
         return nullptr; //should not allow a copy
@@ -96,7 +96,7 @@ inline void* get_ptr(void* ptr_){
     return container->ptr;
 }
 //change ownership of ptr
-inline void* move_ptr(void** ptr_){
+static inline void* move_ptr(void** ptr_){
     void* tptr = *ptr_; //copy value
     *ptr_ = nullptr; //set calling var to nullptr
     return tptr; //return the original pointer value, transferring the ownership of the pointer
