@@ -5,7 +5,7 @@
 //malloc and free
 #include <memory.h>
 //if debugging enable add io include
-#ifdef _DEBUG
+#ifdef _DEBUG_PTR
 #define PTR_LOG 1
 #include <stdio.h>
 #endif
