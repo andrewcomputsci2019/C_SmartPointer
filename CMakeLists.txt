@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 #make clangd happy
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-#project name decloration
+#project name declaration
 project(SmartPointer VERSION 0.1 LANGUAGES C)
 #make target
 add_executable(${PROJECT_NAME})
