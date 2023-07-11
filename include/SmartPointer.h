@@ -86,6 +86,17 @@ static inline void release_ptr(void** ptr_){
         *ptr_ = nullptr;
     }
 }
+
+//similar to try-with or js using or RAII in c++, only supported in clang and gcc
+#if defined(__clang__) || defined(__GNUC__)
+__attribute__ ((always_inline))
+inline void auto_release_ptr(void* ptr){
+    release_ptr((void**)ptr);
+}
+#define using_ptr __attribute__((cleanup(auto_release_ptr)))
+#endif
+
+
 // create copy and increase reference only if shared
 static inline void* get_ptr(void* ptr_){
     reference_count_ptr* container = (reference_count_ptr*) offset(ptr_);
@@ -101,3 +112,4 @@ static inline void* move_ptr(void** ptr_){
     *ptr_ = nullptr; //set calling var to nullptr
     return tptr; //return the original pointer value, transferring the ownership of the pointer
 }
+
