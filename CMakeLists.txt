@@ -45,5 +45,8 @@ install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME} DESTINATION include)
 
+#[[add_executable(DEMO_EXE)
+target_sources(DEMO_EXE PUBLIC ${PROJECT_SOURCE_DIR}/demo/main.c)
+target_link_libraries(DEMO_EXE PUBLIC SmartPointer)]]
 
 message("finished running smart_pointer lib file")
