@@ -6,8 +6,8 @@
 #include <memory.h>
 //if debugging enable add io include
 #ifdef _DEBUG_PTR
-#define PTR_LOG 1
-#include <stdio.h>
+    #define PTR_LOG 1
+    #include <stdio.h>
 #endif
 //macro defines
 #define nullptr NULL
@@ -44,11 +44,18 @@ static inline void* allocate_ptr(size_t size, void (*func_ptr)(void*), pointer_t
     }
     //allocate block for struct and ptr
     reference_count_ptr* ref_ptr = (reference_count_ptr*)malloc(sizeof(reference_count_ptr) + size);
+
     //if allocation failed return null back to user
     if(!ref_ptr){
         //error allocating memory
+        #if PTR_LOG == 1
+            printf("[DEBUG]: failed to allocate memory for pointer container\n");
+        #endif
         return nullptr;
     }
+    #if PTR_LOG == 1
+        printf("[DEBUG]: allocated memory for contianer at %p\n",ref_ptr);
+    #endif
     //set destructor var in struct
     ref_ptr->dtor = func_ptr;
     //set ptr type unique or shared
@@ -87,7 +94,7 @@ static inline void release_ptr(void** ptr_){
     }
 }
 
-//similar to try-with or js using or RAII in c++, only supported in clang and gcc
+//similar to try-with or js using or RAII in c++, only supported in clang and gcc, auto function scope variable only
 #if defined(__clang__) || defined(__GNUC__)
 __attribute__ ((always_inline))
 static inline void auto_release_ptr(void* ptr){
@@ -101,6 +108,9 @@ static inline void auto_release_ptr(void* ptr){
 static inline void* get_ptr(void* ptr_){
     reference_count_ptr* container = (reference_count_ptr*) offset(ptr_);
     if(container->ptr_type == unique){
+        #ifdef PTR_LOG
+                printf("[DEBUG]: Passed Unique pointer in function get_ptr operation not supported\n");
+        #endif
         return nullptr; //should not allow a copy
     }
     container->ref++;
