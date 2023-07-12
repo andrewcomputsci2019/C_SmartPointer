@@ -21,7 +21,7 @@ typedef enum {unique,shared} pointer_type;
 //struct typedef
 typedef struct {
     //holds number of references ptr has, Atomic for thread safety
-    _Atomic int ref;
+    _Atomic u_int64_t ref;
     //destructor function pointer to handel clean up of advanced types
     void (*dtor)(void*);
     //enum whether type is shared or unique
