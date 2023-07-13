@@ -4,6 +4,7 @@
 #include <stdlib.h>
 //malloc and free
 #include <memory.h>
+#include <stdbool.h>
 //if debugging enable add io include
 #ifdef _DEBUG_PTR
     #define PTR_LOG 1
@@ -15,9 +16,10 @@
 #define offset_ptr(ptr) ((size_t)(ptr) - sizeof (reference_count_ptr))
 //shift to start at data type part of block
 #define shift_ptr(base,type) ((size_t)base + sizeof(type))
-#define PTR_FLAG_63 (1 << 63)
-#define PTR_FLAG_SET (n,f) ((n) |= (f))
-#define PTR_FLAG_CHECK (n,f) ((n)&(f))
+#define PTR_FLAG_63 ((u_int64_t)1 << 63)
+#define PTR_FLAG_SET(n,f) ((n) |= (f))
+#define PTR_FLAG_CHECK(n,f) ((n)&(f))
+#define PTR_FLAG_UNSET(n,f) ((n)&(~f))
 #define PTR_UNIQUE 1
 #define PTR_SHARED 0
 
@@ -25,12 +27,10 @@
 typedef enum {unique,shared} pointer_type;
 //struct typedef
 typedef struct {
-    //holds number of references ptr has, Atomic for thread safety
+    //holds number of references ptr has, Atomic for thread safety, really an int_64 since last bit is used for state
     _Atomic u_int64_t ref;
     //destructor function pointer to handel clean up of advanced types
     void (*dtor)(void*);
-    //enum whether type is shared or unique
-    pointer_type ptr_type;
     //the actual ptr itself
     void *ptr;
     
@@ -39,12 +39,18 @@ typedef struct {
 
 //this function should allocate the reference_count_ptr struct
 //and then this function should return just the ptr of the data
-static inline void* allocate_ptr(size_t size, void (*func_ptr)(void*), pointer_type ptr_type_){
+static inline void* allocate_ptr(size_t size, void (*func_ptr)(void*), int ptr_type){
+    if(ptr_type != 0 && ptr_type != 1){
+        #if PTR_LOG == 1
+                printf("[DEBUG]: Given invalid ptr_type value: expected value of 1 or 0 given: %du\n",ptr_type);
+        #endif
+        return nullptr;
+    }
     //check function ptr
     if(!func_ptr){
         //no destructor provided
         #if PTR_LOG == 1
-            printf("[DEBUG]: Function call of pointer_type: %s and size of: %lu was not provided destructor function pointer\n",(ptr_type_ == unique ? "Unique" : "Shared"), size);
+            printf("[DEBUG]: Function call of pointer_type: %s and size of: %lu was not provided destructor function pointer\n",(ptr_type? "Unique" : "Shared"), size);
         #endif
     }
     //allocate block for struct and ptr
@@ -59,16 +65,17 @@ static inline void* allocate_ptr(size_t size, void (*func_ptr)(void*), pointer_t
         return nullptr;
     }
     #if PTR_LOG == 1
-        printf("[DEBUG]: allocated memory for contianer at %p\n",ref_ptr);
+        printf("[DEBUG]: allocated memory for container at %p\n",ref_ptr);
     #endif
     //set destructor var in struct
     ref_ptr->dtor = func_ptr;
     //set ptr type unique or shared
-    ref_ptr->ptr_type = ptr_type_;
+    ref_ptr->ref = 0;
+    PTR_FLAG_SET(ref_ptr->ref,ptr_type?PTR_FLAG_63:0);
     //align the ptr to the end of the struct block
     ref_ptr->ptr = (void*)shift_ptr(ref_ptr,reference_count_ptr);
     //set reference to one
-    ref_ptr->ref = 1;
+    ref_ptr->ref += 1;
     //return the ptr address
     return ref_ptr->ptr;
 }
@@ -77,14 +84,14 @@ static inline void release_ptr(void** ptr_){
     //checks for null pointers
     if(!ptr_ || !(*ptr_)){
         #ifdef PTR_LOG
-            printf("[DEBUG]: Null Pointer passed to relase_ptr function\n");
+            printf("[DEBUG]: Null Pointer passed to release_ptr function\n");
         #endif
         return;
     }
     //shift the data pointer to start of the container
     reference_count_ptr* container = (reference_count_ptr*) offset_ptr(*ptr_);
     container->ref--; //decrement reference count of the pointer
-    if(container->ref == 0){ //check if reference count is zero
+    if(PTR_FLAG_UNSET(container->ref,PTR_FLAG_63) == 0){ //check if reference count is zero
         //delete pointer
         if(container->dtor){ //if dtor is not a null pointer call it
             #ifdef PTR_LOG
@@ -113,7 +120,7 @@ static inline void auto_release_ptr(void* ptr){
 // create copy and increase reference only if shared
 static inline void* get_ptr(void* ptr_){
     reference_count_ptr* container = (reference_count_ptr*) offset_ptr(ptr_);
-    if(container->ptr_type == unique){//prevents giving more instances of a unique ptr
+    if(PTR_FLAG_CHECK(container->ref,PTR_FLAG_63) != 0){//prevents giving more instances of a unique ptr
         #ifdef PTR_LOG
                 printf("[DEBUG]: Passed Unique pointer in function get_ptr, operation not supported\n");
         #endif
