@@ -12,9 +12,9 @@
 //macro defines
 #define nullptr NULL
 //calc offset of pointer to get whole block
-#define offset(ptr) ((size_t)(ptr) - sizeof (reference_count_ptr))
+#define offset_ptr(ptr) ((size_t)(ptr) - sizeof (reference_count_ptr))
 //shift to start at data type part of block
-#define shift(base,type) ((size_t)base + sizeof(type))
+#define shift_ptr(base,type) ((size_t)base + sizeof(type))
 
 //enum typedef
 typedef enum {unique,shared} pointer_type;
@@ -61,7 +61,7 @@ static inline void* allocate_ptr(size_t size, void (*func_ptr)(void*), pointer_t
     //set ptr type unique or shared
     ref_ptr->ptr_type = ptr_type_;
     //align the ptr to the end of the struct block
-    ref_ptr->ptr = (void*)shift(ref_ptr,reference_count_ptr);
+    ref_ptr->ptr = (void*)shift_ptr(ref_ptr,reference_count_ptr);
     //set reference to one
     ref_ptr->ref = 1;
     //return the ptr address
@@ -76,7 +76,7 @@ static inline void release_ptr(void** ptr_){
         #endif
         return;
     }
-    reference_count_ptr* container = (reference_count_ptr*) offset(*ptr_);
+    reference_count_ptr* container = (reference_count_ptr*) offset_ptr(*ptr_);
     container->ref--;
     if(container->ref == 0){
         //delete pointer
@@ -106,7 +106,7 @@ static inline void auto_release_ptr(void* ptr){
 
 // create copy and increase reference only if shared
 static inline void* get_ptr(void* ptr_){
-    reference_count_ptr* container = (reference_count_ptr*) offset(ptr_);
+    reference_count_ptr* container = (reference_count_ptr*) offset_ptr(ptr_);
     if(container->ptr_type == unique){
         #ifdef PTR_LOG
                 printf("[DEBUG]: Passed Unique pointer in function get_ptr operation not supported\n");
