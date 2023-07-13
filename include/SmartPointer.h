@@ -15,6 +15,11 @@
 #define offset_ptr(ptr) ((size_t)(ptr) - sizeof (reference_count_ptr))
 //shift to start at data type part of block
 #define shift_ptr(base,type) ((size_t)base + sizeof(type))
+#define PTR_FLAG_63 (1 << 63)
+#define PTR_FLAG_SET (n,f) ((n) |= (f))
+#define PTR_FLAG_CHECK (n,f) ((n)&(f))
+#define PTR_UNIQUE 1
+#define PTR_SHARED 0
 
 //enum typedef
 typedef enum {unique,shared} pointer_type;
@@ -67,7 +72,7 @@ static inline void* allocate_ptr(size_t size, void (*func_ptr)(void*), pointer_t
     //return the ptr address
     return ref_ptr->ptr;
 }
-//could be a foot gun
+//called once someone wants to release an instance of a smart pointer
 static inline void release_ptr(void** ptr_){
     //checks for null pointers
     if(!ptr_ || !(*ptr_)){
@@ -76,11 +81,12 @@ static inline void release_ptr(void** ptr_){
         #endif
         return;
     }
+    //shift the data pointer to start of the container
     reference_count_ptr* container = (reference_count_ptr*) offset_ptr(*ptr_);
-    container->ref--;
-    if(container->ref == 0){
+    container->ref--; //decrement reference count of the pointer
+    if(container->ref == 0){ //check if reference count is zero
         //delete pointer
-        if(container->dtor){
+        if(container->dtor){ //if dtor is not a null pointer call it
             #ifdef PTR_LOG
                 printf("[DEBUG]: Calling ptr destructor at: %p\n",*ptr_);
             #endif
@@ -89,8 +95,8 @@ static inline void release_ptr(void** ptr_){
         #ifdef PTR_LOG
             printf("[DEBUG]: Freeing struct container of ptr at %p\n", *ptr_);
         #endif
-        free(container);
-        *ptr_ = nullptr;
+        free(container);//free the whole block including pointer and container
+        *ptr_ = nullptr;//prevent dangling pointer and double free
     }
 }
 
@@ -107,19 +113,19 @@ static inline void auto_release_ptr(void* ptr){
 // create copy and increase reference only if shared
 static inline void* get_ptr(void* ptr_){
     reference_count_ptr* container = (reference_count_ptr*) offset_ptr(ptr_);
-    if(container->ptr_type == unique){
+    if(container->ptr_type == unique){//prevents giving more instances of a unique ptr
         #ifdef PTR_LOG
-                printf("[DEBUG]: Passed Unique pointer in function get_ptr operation not supported\n");
+                printf("[DEBUG]: Passed Unique pointer in function get_ptr, operation not supported\n");
         #endif
         return nullptr; //should not allow a copy
     }
-    container->ref++;
-    return container->ptr;
+    container->ref++;//increment count
+    return container->ptr; //return pointer
 }
 //change ownership of ptr
 static inline void* move_ptr(void** ptr_){
     void* tptr = *ptr_; //copy value
-    *ptr_ = nullptr; //set calling var to nullptr
+    *ptr_ = nullptr; //set calling var to NULL
     return tptr; //return the original pointer value, transferring the ownership of the pointer
 }
 
