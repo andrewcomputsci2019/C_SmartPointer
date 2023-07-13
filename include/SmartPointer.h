@@ -2,8 +2,6 @@
 //includes
 //_Atomic
 #include <stdlib.h>
-//malloc and free
-#include <memory.h>
 //if debugging enable add io include
 #ifdef _DEBUG_PTR
     #define PTR_LOG 1
@@ -15,6 +13,7 @@
 #define offset_ptr(ptr) ((size_t)(ptr) - sizeof (reference_count_ptr))
 //shift to start at data type part of block
 #define shift_ptr(base,type) ((size_t)base + sizeof(type))
+//bitflag macros
 #define PTR_FLAG_63 ((u_int64_t)1 << 63)
 #define PTR_FLAG_SET(n,f) ((n) |= (f))
 #define PTR_FLAG_CHECK(n,f) ((n)&(f))
@@ -22,8 +21,6 @@
 #define PTR_UNIQUE 1
 #define PTR_SHARED 0
 
-//enum typedef
-typedef enum {unique,shared} pointer_type;
 //struct typedef
 typedef struct {
     //holds number of references ptr has, Atomic for thread safety, really an int_64 since last bit is used for state
