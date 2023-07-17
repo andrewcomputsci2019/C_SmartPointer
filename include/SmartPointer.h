@@ -12,7 +12,7 @@
 //calc offset of pointer to get whole block
 #define offset_ptr(ptr) ((size_t)(ptr) - sizeof (reference_count_ptr))
 //shift to start at data type part of block
-#define shift_ptr(base,type) ((size_t)base + sizeof(type))
+#define shift_ptr(base) ((size_t)base + sizeof(reference_count_ptr))
 //bitflag macros
 #define PTR_FLAG_63 ((u_int64_t)1 << 63)
 #define PTR_FLAG_SET(n,f) ((n) |= (f))
@@ -27,8 +27,6 @@ typedef struct {
     _Atomic u_int64_t ref;
     //destructor function pointer to handel clean up of advanced types
     void (*dtor)(void*);
-    //the actual ptr itself
-    void *ptr;
     
 }reference_count_ptr;
 
@@ -68,12 +66,10 @@ static inline void* allocate_ptr(size_t size, void (*func_ptr)(void*), int ptr_t
     //set ptr type unique or shared
     ref_ptr->ref = 0;
     PTR_FLAG_SET(ref_ptr->ref,ptr_type?PTR_FLAG_63:0);
-    //align the ptr to the end of the struct block
-    ref_ptr->ptr = (void*)shift_ptr(ref_ptr,reference_count_ptr);
     //set reference to one
     ref_ptr->ref += 1;
-    //return the ptr address
-    return ref_ptr->ptr;
+    //return the ptr address, which is aligned at the end of the struct block
+    return (void*)shift_ptr(ref_ptr);
 }
 //called once someone wants to release an instance of a smart pointer
 static inline void release_ptr(void** ptr_){
@@ -93,7 +89,7 @@ static inline void release_ptr(void** ptr_){
             #ifdef PTR_LOG
                 printf("[DEBUG]: Calling ptr destructor at: %p\n",*ptr_);
             #endif
-            container->dtor(container->ptr);
+            container->dtor(*ptr_);
         }
         #ifdef PTR_LOG
             printf("[DEBUG]: Freeing struct container of ptr at %p\n", *ptr_);
@@ -123,7 +119,7 @@ static inline void* get_ptr(void* ptr_){
         return nullptr; //should not allow a copy
     }
     container->ref++;//increment count
-    return container->ptr; //return pointer
+    return ptr_; //return pointer
 }
 //change ownership of ptr
 static inline void* move_ptr(void** ptr_){
