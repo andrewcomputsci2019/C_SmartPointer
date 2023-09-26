@@ -63,7 +63,7 @@ Verify pointer is null: (nil)
             printf("This is a string %s", str);
     }//once reached here *str is released automatically and then freed
 ```
-output of above code
+output of the above code
 ```shell
 [DEBUG]: allocated memory for container at 0x23f76d0
 This is a string Smart String
@@ -95,7 +95,7 @@ void dtor_File(void* fp){
     printf("Closing file manually by releasing smart pointer reference\n");
     release_ptr((void**)&pFile);
 ````
-output of above code
+output of the above code
 ```shell
 [DEBUG]: Freeing struct container of ptr at 0x23f76e0
 [DEBUG]: allocated memory for container at 0x23f76b0
