@@ -31,8 +31,7 @@ typedef struct {
 }reference_count_ptr;
 
 
-//this function should allocate the reference_count_ptr struct
-//and then this function should return just the ptr of the data
+//allocates the smart pointer struct and given data type, returns void* of the size of the data type
 static inline void* allocate_ptr(size_t size, void (*func_ptr)(void*), int ptr_type){
     if(ptr_type != 0 && ptr_type != 1){
         #if PTR_LOG == 1
@@ -71,7 +70,7 @@ static inline void* allocate_ptr(size_t size, void (*func_ptr)(void*), int ptr_t
     //return the ptr address, which is aligned at the end of the struct block
     return (void*)shift_ptr(ref_ptr);
 }
-//called once someone wants to release an instance of a smart pointer
+//decrements the count of the given smart pointer
 static inline void release_ptr(void** ptr_){
     //checks for null pointers
     if(!ptr_ || !(*ptr_)){
@@ -85,7 +84,7 @@ static inline void release_ptr(void** ptr_){
     container->ref--; //decrement reference count of the pointer
     if(PTR_FLAG_UNSET(container->ref,PTR_FLAG_63) == 0){ //check if reference count is zero
         //delete pointer
-        if(container->dtor){ //if dtor is not a null pointer call it
+        if(container->dtor){ //if dtor is not a null pointer, call it
             #ifdef PTR_LOG
                 printf("[DEBUG]: Calling ptr destructor at: %p\n",*ptr_);
             #endif
@@ -94,7 +93,7 @@ static inline void release_ptr(void** ptr_){
         #ifdef PTR_LOG
             printf("[DEBUG]: Freeing struct container of ptr at %p\n", *ptr_);
         #endif
-        free(container);//free the whole block including pointer and container
+        free(container);//free the whole block including the pointer and container
         *ptr_ = nullptr;//prevent dangling pointer and double free
     }
 }
