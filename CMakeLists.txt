@@ -14,6 +14,7 @@ target_include_directories(${PROJECT_NAME} INTERFACE $<BUILD_INTERFACE:${CMAKE_C
 #set c_standard
 set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)
 set(PTR_LOGGING OFF CACHE BOOL "ENABLES DEBUG INFORMATION DURING RUN TIME")
+set(PTR_DEMO OFF CACHE BOOL "ENABLES COMPILING OF DEMO PROGRAM")
 if(${PTR_LOGGING})
     message("debug messaging enabled for smart pointers")
     target_compile_definitions(${PROJECT_NAME} INTERFACE _DEBUG_PTR)
@@ -45,8 +46,9 @@ install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/${PROJECT_NAME} DESTINATION include)
 
-#[[add_executable(DEMO_EXE)
-target_sources(DEMO_EXE PUBLIC ${PROJECT_SOURCE_DIR}/demo/main.c)
-target_link_libraries(DEMO_EXE PUBLIC SmartPointer)]]
-
+if(${PTR_DEMO})
+    add_executable(DEMO_EXE)
+    target_sources(DEMO_EXE PUBLIC ${PROJECT_SOURCE_DIR}/demo/main.c)
+    target_link_libraries(DEMO_EXE PUBLIC SmartPointer)
+endif()
 message("finished running smart_pointer lib file")
