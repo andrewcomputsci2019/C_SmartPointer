@@ -1,3 +1,6 @@
+/*
+ * Created by Andrew Pegg @ 2023
+ */
 #include <stdio.h>
 #include <string.h>
 #include <SmartPointer.h>
@@ -27,7 +30,7 @@ int main(){
     printf("Verifying that pointer value is still 5: %d\n",*ptr2);
     printf("Verify that pointer is null %p\n",ptr);
     release_ptr((void**)&ptr2);
-    printf("Verify pointer is null: %p",ptr2);
+    printf("Verify pointer is null: %p\n",ptr2);
     { //highlight how using_ptr tag works
         using_ptr char *str = allocate_ptr(sizeof(char) * 35, dtor_String, PTR_SHARED);
         str = strcpy(str, "Smart String\n");

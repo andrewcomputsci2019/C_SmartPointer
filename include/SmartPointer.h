@@ -1,3 +1,7 @@
+/*
+ * Created by Andrew Pegg 2023
+ *
+ */
 #pragma once
 //includes
 //_Atomic
